@@ -7,69 +7,9 @@ use serde::Deserialize;
 use serde_json::json;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-#[derive(Debug, Deserialize)]
-struct DebuggerInstance {
-    description: String,
-    devtoolsFrontendUrl: String,
-    devtoolsFrontendUrlCompat: String,
-    faviconUrl: String,
-    id: String,
-    title: String,
-    #[serde(rename = "type")]
-    debugger_type: String,
-    url: String,
-    webSocketDebuggerUrl: String,
-}
+mod structs;
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CallFrame {
-    functionName: String,
-    scriptId: String,
-    url: String,
-    columnNumber: i64,
-    lineNumber: i64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ProfileSample {
-    size: i64,
-    nodeId: i64,
-    ordinal: i64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ProfileObject {
-    head: ProfileHead,
-    samples: Vec<ProfileSample>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ProfileHead {
-    callFrame: CallFrame,
-    children: Vec<ProfileHead>,
-    id: i64,
-    selfSize: i64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields, untagged)]
-enum WebsocketResponseResult {
-    Profile { profile: ProfileObject },
-    Normal {},
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct WebsocketResponse {
-    id: u64,
-    result: WebsocketResponseResult,
-}
-
-fn process(profile: ProfileHead, root: String) {
+fn process(profile: structs::ProfileHead, root: String) {
     let stack = format!(
         "{};{} {}",
         root,
@@ -88,7 +28,7 @@ fn process(profile: ProfileHead, root: String) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let body: Vec<DebuggerInstance> = reqwest::get("http://localhost:9229/json")
+    let body: Vec<structs::DebuggerInstance> = reqwest::get("http://localhost:9229/json")
         .await?
         .json()
         .await?;
@@ -111,9 +51,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             deserializer.disable_recursion_limit();
 
             let deserializer = serde_stacker::Deserializer::new(&mut deserializer);
-            let v = WebsocketResponse::deserialize(deserializer).unwrap();
+            let v = structs::WebsocketResponse::deserialize(deserializer).unwrap();
 
-            if let WebsocketResponseResult::Profile { profile } = v.result {
+            if let structs::WebsocketResponseResult::Profile { profile } = v.result {
                 process(profile.head, "".to_string());
             }
         })
@@ -139,6 +79,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
         thread::sleep(sleep_delay);
     }
-
-    Ok(())
 }
