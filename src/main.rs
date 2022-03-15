@@ -1,3 +1,5 @@
+#![allow(dead_code, non_snake_case)]
+
 use std::{thread, time};
 
 use futures_util::{SinkExt, StreamExt};
