@@ -13,9 +13,17 @@ mod structs;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Frequency to sample heap
+    /// JSON endpoint of the debugger
+    #[clap(short, long, default_value_t=String::from("http://localhost:9229/json"))]
+    debugger_url: String,
+
+    /// Frequency to sample heap (ms)
     #[clap(short, long, default_value_t = 1000)]
     frequency: u64,
+
+    /// Initial delay before sampling (ms)
+    #[clap(short, long, default_value_t = 0)]
+    initial_delay: u64,
 }
 
 fn process(profile: structs::ProfileHead, root: String) {
@@ -39,10 +47,8 @@ fn process(profile: structs::ProfileHead, root: String) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let body: Vec<structs::DebuggerInstance> = reqwest::get("http://localhost:9229/json")
-        .await?
-        .json()
-        .await?;
+    let body: Vec<structs::DebuggerInstance> =
+        reqwest::get(args.debugger_url).await?.json().await?;
 
     if body.is_empty() {
         println!("No debuggers could be found");
@@ -80,6 +86,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     let sleep_delay = time::Duration::from_millis(args.frequency);
+
+    thread::sleep(time::Duration::from_millis(args.initial_delay));
 
     loop {
         tx.send(Message::Text(
