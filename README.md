@@ -1,4 +1,4 @@
-# node-flamegraphs
+# node-memory-flamegraphs
 
 Tool for generating memory flamegraphs of Node applications
 
