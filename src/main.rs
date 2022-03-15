@@ -2,12 +2,21 @@
 
 use std::{thread, time};
 
+use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use serde_json::json;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 mod structs;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Frequency to sample heap
+    #[clap(short, long, default_value_t = 1000)]
+    frequency: u64,
+}
 
 fn process(profile: structs::ProfileHead, root: String) {
     let stack = format!(
@@ -28,6 +37,8 @@ fn process(profile: structs::ProfileHead, root: String) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+
     let body: Vec<structs::DebuggerInstance> = reqwest::get("http://localhost:9229/json")
         .await?
         .json()
@@ -68,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ))
     .await?;
 
-    let sleep_delay = time::Duration::from_millis(1000);
+    let sleep_delay = time::Duration::from_millis(args.frequency);
 
     loop {
         tx.send(Message::Text(

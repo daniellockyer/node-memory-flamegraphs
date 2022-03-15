@@ -619,6 +619,7 @@ dependencies = [
 name = "node-memory-flamegraphs"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "futures-util",
  "inferno",
  "reqwest",
