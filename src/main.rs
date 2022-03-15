@@ -40,10 +40,10 @@ struct ProfileSample {
 }
 
 #[derive(Debug, Deserialize)]
-//#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 struct ProfileObject {
     head: ProfileHead,
-    //samples: Vec<ProfileSample>,
+    samples: Vec<ProfileSample>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
