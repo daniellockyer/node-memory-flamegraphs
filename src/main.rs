@@ -80,14 +80,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ))
     .await?;
 
+    let sleep_delay = time::Duration::from_millis(args.frequency);
+
+    thread::sleep(time::Duration::from_millis(args.initial_delay));
+
     tx.send(Message::Text(
         json!({"id": 0, "method": "HeapProfiler.startSampling"}).to_string(),
     ))
     .await?;
-
-    let sleep_delay = time::Duration::from_millis(args.frequency);
-
-    thread::sleep(time::Duration::from_millis(args.initial_delay));
 
     loop {
         tx.send(Message::Text(
