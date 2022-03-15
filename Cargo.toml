@@ -2,6 +2,7 @@
 name = "node-memory-flamegraphs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Daniel Lockyer <hi@daniellockyer.com>"]
 
 [dependencies]
 futures-util = "0.3.21"
