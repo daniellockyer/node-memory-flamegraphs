@@ -38,9 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let debugger_url = &body[0].webSocketDebuggerUrl;
-
-    let (ws_stream, _) = connect_async(debugger_url).await?;
+    let (ws_stream, _) = connect_async(&body[0].webSocketDebuggerUrl).await?;
     let (mut tx, rx) = ws_stream.split();
 
     tokio::spawn(async move {
