@@ -16,6 +16,7 @@ use env_logger::Env;
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use serde_json::json;
+use subprocess::{Popen, PopenConfig};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 mod structs;
@@ -27,9 +28,10 @@ struct Args {
     #[clap(long, default_value_t = String::from("http://localhost:9229/json"))]
     debugger_url: String,
 
-    ///// Entry point file to profile
-    //#[clap(long)]
-    //entry_point: String,
+    /// Entry point file to profile
+    #[clap(long)]
+    entry_point: Option<String>,
+
     /// Frequency to sample heap (ms)
     #[clap(short, long, default_value_t = 1000)]
     frequency: u64,
@@ -78,6 +80,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     fs::create_dir(temp_dir)?;
+
+    if let Some(entry_point) = args.entry_point {
+        info!("Launching `{}`", entry_point);
+
+        let entry_cwd = fs::canonicalize(&entry_point)?;
+        let entry_cwd_parent = entry_cwd.parent().ok_or(".")?.as_os_str();
+
+        Popen::create(
+            &["node", "--inspect-brk", &entry_point],
+            PopenConfig {
+                detached: true,
+                cwd: Some(entry_cwd_parent.into()),
+                ..Default::default()
+            },
+        )?;
+        thread::sleep(time::Duration::from_millis(500));
+    }
 
     info!("Fetching debugger JSON via {}", args.debugger_url);
 
