@@ -24,9 +24,12 @@ mod structs;
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// JSON endpoint of the debugger
-    #[clap(short, long, default_value_t=String::from("http://localhost:9229/json"))]
+    #[clap(long, default_value_t = String::from("http://localhost:9229/json"))]
     debugger_url: String,
 
+    ///// Entry point file to profile
+    //#[clap(long)]
+    //entry_point: String,
     /// Frequency to sample heap (ms)
     #[clap(short, long, default_value_t = 1000)]
     frequency: u64,
@@ -34,9 +37,13 @@ struct Args {
     /// Initial delay before sampling (ms)
     #[clap(short, long, default_value_t = 0)]
     initial_delay: u64,
+
+    /// Temporary directory to store files
+    #[clap(short, long, default_value_t = String::from("./.memgraphs"))]
+    temp_dir: String,
 }
 
-fn process(profile: structs::ProfileHead, root: String) {
+fn process<W: Write>(writer: &mut W, profile: structs::ProfileHead, root: String) {
     let stack = format!(
         "{};{} {}",
         root,
@@ -45,11 +52,14 @@ fn process(profile: structs::ProfileHead, root: String) {
     );
 
     if profile.callFrame.functionName != "" {
-        println!("{} {}", stack, profile.selfSize);
+        let output = format!("{} {}\n", stack, profile.selfSize);
+        writer
+            .write_all(output.as_bytes())
+            .expect("Could not write to file");
     }
 
     for p in profile.children {
-        process(p, stack.to_owned());
+        process(writer, p, stack.to_owned());
     }
 }
 
@@ -59,6 +69,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init_from_env(env);
 
     let args = Args::parse();
+
+    let temp_dir_path = args.temp_dir.to_owned();
+    let temp_dir = Path::new(&temp_dir_path);
+
+    if temp_dir.exists() {
+        fs::remove_dir_all(temp_dir)?;
+    }
+
+    fs::create_dir(temp_dir)?;
+
+    info!("Fetching debugger JSON via {}", args.debugger_url);
 
     let body: Vec<structs::DebuggerInstance> =
         reqwest::get(args.debugger_url).await?.json().await?;
@@ -85,7 +106,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let v = structs::WebsocketResponse::deserialize(deserializer).unwrap();
 
             if let structs::WebsocketResponseResult::Profile { profile } = v.result {
-                process(profile.head, "".to_string());
+                let start = SystemTime::now();
+                let since_the_epoch = start
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_millis();
+
+                let filename = format!("./.memgraphs/{}.txt", since_the_epoch);
+                let f = File::create(filename).expect("Unable to create file");
+                let mut writer = BufWriter::new(f);
+
+                process(&mut writer, profile.head, "".to_string());
             }
         })
         .await;
@@ -103,6 +134,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Sleeping for {}ms", args.initial_delay);
     thread::sleep(time::Duration::from_millis(args.initial_delay));
 
+    ctrlc::set_handler(move || {
+        info!("Collecting files from temporary directory");
+        let temp_dir = args.temp_dir.to_owned();
+        let files: Vec<PathBuf> = fs::read_dir(&temp_dir)
+            .expect("Unable to list files in temporary directory")
+            .map(|p| p.unwrap().path())
+            .collect();
+
+        info!("Found {} files", files.len());
+
+        if files.len() > 0 {
+            let mut opt = inferno::flamegraph::Options::default();
+            opt.colors =
+                inferno::flamegraph::Palette::Multi(inferno::flamegraph::color::MultiPalette::Js);
+
+            let f = File::create("memgraph.svg").expect("Unable to create file");
+            let f = BufWriter::new(f);
+
+            info!("Generating flamegraph");
+            match inferno::flamegraph::from_files(&mut opt, &files, f) {
+                Ok(()) => info!("Generated flamegraph"),
+                Err(err) => error!("Unable to generate flamegraph: {}", err),
+            };
+
+            fs::remove_dir_all(temp_dir).expect("Could not delete files");
+        }
+        std::process::exit(0);
+    })?;
+
+    info!("Starting to sample");
     tx.send(Message::Text(
         json!({"id": 0, "method": "HeapProfiler.startSampling"}).to_string(),
     ))
