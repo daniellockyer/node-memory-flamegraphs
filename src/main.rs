@@ -144,9 +144,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let f = File::create(&args.output).expect("Unable to create file");
             let f = BufWriter::new(f);
 
+            let output_file = fs::canonicalize(&args.output).expect("Cannot canonicalize path");
+
             info!("Generating flamegraph");
             match inferno::flamegraph::from_files(&mut opt, &files, f) {
-                Ok(()) => info!("Generated flamegraph"),
+                Ok(()) => info!(
+                    "Generated flamegraph: file://{}",
+                    output_file
+                        .to_str()
+                        .expect("Cannot turn output_file into string")
+                ),
                 Err(err) => error!("Unable to generate flamegraph: {}", err),
             };
 
