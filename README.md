@@ -2,7 +2,7 @@
 
 Tool for generating memory flamegraphs of Node applications
 
-# Usage
+## Usage
 
 Once you have `node-memory-flamegraphs` installed, you can use it in a few different ways.
 
@@ -32,10 +32,10 @@ node-memory-flamegraphs --frequency 500
 
 Press Ctrl+C to finish sampling and to generate the flamegraph.
 
-# Screenshot
+## Screenshot
 
 ![Example](https://user-images.githubusercontent.com/964245/158569136-432f0235-aec1-49b6-ac5a-cefe0b40bd20.svg)
 
-# License
+## License
 
 Copyright (c) 2022 Daniel Lockyer - Released under the [MIT license](LICENSE).
