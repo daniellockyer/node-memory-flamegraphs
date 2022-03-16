@@ -1,5 +1,3 @@
-#![allow(dead_code, non_snake_case)]
-
 #[macro_use]
 extern crate log;
 
