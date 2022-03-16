@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 inferno::flamegraph::Palette::Multi(inferno::flamegraph::color::MultiPalette::Js);
             opt.bgcolors = Some(inferno::flamegraph::color::BackgroundColor::Grey);
 
-            let f = File::create("memgraph.svg").expect("Unable to create file");
+            let f = File::create(&args.output).expect("Unable to create file");
             let f = BufWriter::new(f);
 
             info!("Generating flamegraph");

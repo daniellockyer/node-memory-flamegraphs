@@ -22,6 +22,10 @@ pub struct Args {
     #[clap(short, long, default_value_t = 0)]
     pub delay: u64,
 
+    /// File path to output the SVG to
+    #[clap(short, long, default_value_t = String::from("memgraph.svg"))]
+    pub output: String,
+
     /// Temporary directory to store files
     #[clap(short, long, default_value_t = String::from("./.memgraphs"))]
     pub temp_dir: String,
