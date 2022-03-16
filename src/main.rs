@@ -19,30 +19,6 @@ use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 mod structs;
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct Args {
-    /// JSON endpoint of the debugger
-    #[clap(long, default_value_t = String::from("http://localhost:9229/json"))]
-    debugger_url: String,
-
-    /// Entry point file to profile
-    #[clap(long)]
-    entry_point: Option<String>,
-
-    /// Frequency to sample heap (ms)
-    #[clap(short, long, default_value_t = 1000)]
-    frequency: u64,
-
-    /// Initial delay before sampling (ms)
-    #[clap(short, long, default_value_t = 0)]
-    delay: u64,
-
-    /// Temporary directory to store files
-    #[clap(short, long, default_value_t = String::from("./.memgraphs"))]
-    temp_dir: String,
-}
-
 fn process<W: Write>(writer: &mut W, profile: structs::ProfileHead, root: String) {
     let stack = format!(
         "{};{} {}",
@@ -66,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = Env::default().filter_or("LOG_LEVEL", "info");
     env_logger::init_from_env(env);
 
-    let args = Args::parse();
+    let args = structs::Args::parse();
 
     let temp_dir_path = args.temp_dir.to_owned();
     let temp_dir = Path::new(&temp_dir_path);

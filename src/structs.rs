@@ -1,6 +1,31 @@
 #![allow(dead_code, non_snake_case)]
 
+use clap::Parser;
 use serde::Deserialize;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct Args {
+    /// JSON endpoint of the debugger
+    #[clap(long, default_value_t = String::from("http://localhost:9229/json"))]
+    pub debugger_url: String,
+
+    /// Entry point file to profile
+    #[clap(long)]
+    pub entry_point: Option<String>,
+
+    /// Frequency to sample heap (ms)
+    #[clap(short, long, default_value_t = 1000)]
+    pub frequency: u64,
+
+    /// Initial delay before sampling (ms)
+    #[clap(short, long, default_value_t = 0)]
+    pub delay: u64,
+
+    /// Temporary directory to store files
+    #[clap(short, long, default_value_t = String::from("./.memgraphs"))]
+    pub temp_dir: String,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct DebuggerInstance {
