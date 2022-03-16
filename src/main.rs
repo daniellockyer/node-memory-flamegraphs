@@ -111,10 +111,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Connecting to {}", &body[0].webSocketDebuggerUrl);
     let (ws_stream, _) = connect_async(&body[0].webSocketDebuggerUrl).await?;
     let (mut tx, rx) = ws_stream.split();
-    info!("Connected");
+    info!("Connected to debugger");
 
     tokio::spawn(async move {
-        info!("Waiting for samples");
+        info!("[rx] Waiting for samples");
         rx.for_each(|message| async {
             let data = message.unwrap().into_data();
 
@@ -183,7 +183,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(0);
     })?;
 
-    info!("Starting to sample");
+    info!("Starting to sample, press Ctrl+C/Cmd+C to finish");
     tx.send(Message::Text(
         json!({"id": 0, "method": "HeapProfiler.startSampling"}).to_string(),
     ))
