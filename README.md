@@ -2,4 +2,4 @@
 
 Tool for generating memory flamegraphs of Node applications
 
-![Example](https://user-images.githubusercontent.com/964245/158399183-c4ad9c9b-d0d8-45dd-8f75-e0285fbbf9e4.svg)
+![Example](https://user-images.githubusercontent.com/964245/158569136-432f0235-aec1-49b6-ac5a-cefe0b40bd20.svg)
