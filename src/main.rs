@@ -22,9 +22,7 @@ mod structs;
 fn process<W: Write>(writer: &mut W, profile: structs::ProfileHead, root: String) {
     let stack = format!(
         "{};{} {}",
-        root,
-        profile.callFrame.functionName.to_owned(),
-        profile.callFrame.url.to_owned(),
+        root, profile.callFrame.functionName, profile.callFrame.url,
     );
 
     let output = format!("{} {}\n", stack, profile.selfSize);
@@ -135,7 +133,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         info!("Found {} files", files.len());
 
-        if files.len() > 0 {
+        if !files.is_empty() {
             let mut opt = inferno::flamegraph::Options::default();
             opt.colors =
                 inferno::flamegraph::Palette::Multi(inferno::flamegraph::color::MultiPalette::Js);
