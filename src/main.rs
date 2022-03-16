@@ -51,12 +51,10 @@ fn process<W: Write>(writer: &mut W, profile: structs::ProfileHead, root: String
         profile.callFrame.url.to_owned(),
     );
 
-    if profile.callFrame.functionName != "" {
-        let output = format!("{} {}\n", stack, profile.selfSize);
-        writer
-            .write_all(output.as_bytes())
-            .expect("Could not write to file");
-    }
+    let output = format!("{} {}\n", stack, profile.selfSize);
+    writer
+        .write_all(output.as_bytes())
+        .expect("Could not write to file");
 
     for p in profile.children {
         process(writer, p, stack.to_owned());
