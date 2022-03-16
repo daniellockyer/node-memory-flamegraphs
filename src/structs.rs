@@ -27,7 +27,7 @@ pub struct Args {
     pub output: String,
 
     /// Temporary directory to store files
-    #[clap(short, long, default_value_t = String::from("./.memgraphs"))]
+    #[clap(short, long, default_value_t = String::from(".memgraphs"))]
     pub temp_dir: String,
 }
 
