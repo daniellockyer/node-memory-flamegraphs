@@ -38,7 +38,7 @@ struct Args {
 
     /// Initial delay before sampling (ms)
     #[clap(short, long, default_value_t = 0)]
-    initial_delay: u64,
+    delay: u64,
 
     /// Temporary directory to store files
     #[clap(short, long, default_value_t = String::from("./.memgraphs"))]
@@ -150,8 +150,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sleep_delay = time::Duration::from_millis(args.frequency);
 
-    info!("Sleeping for {}ms", args.initial_delay);
-    thread::sleep(time::Duration::from_millis(args.initial_delay));
+    info!("Sleeping for {}ms", args.delay);
+    thread::sleep(time::Duration::from_millis(args.delay));
 
     ctrlc::set_handler(move || {
         info!("Collecting files from temporary directory");
