@@ -1,8 +1,18 @@
 #![allow(dead_code, non_snake_case)]
 
-use std::{thread, time};
+#[macro_use]
+extern crate log;
+
+use std::{
+    fs::{self, File},
+    io::{BufWriter, Write},
+    path::{Path, PathBuf},
+    thread,
+    time::{self, SystemTime, UNIX_EPOCH},
+};
 
 use clap::Parser;
+use env_logger::Env;
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use serde_json::json;
@@ -45,20 +55,26 @@ fn process(profile: structs::ProfileHead, root: String) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let env = Env::default().filter_or("LOG_LEVEL", "info");
+    env_logger::init_from_env(env);
+
     let args = Args::parse();
 
     let body: Vec<structs::DebuggerInstance> =
         reqwest::get(args.debugger_url).await?.json().await?;
 
     if body.is_empty() {
-        println!("No debuggers could be found");
+        error!("No debuggers could be found");
         return Ok(());
     }
 
+    info!("Connecting to {}", &body[0].webSocketDebuggerUrl);
     let (ws_stream, _) = connect_async(&body[0].webSocketDebuggerUrl).await?;
     let (mut tx, rx) = ws_stream.split();
+    info!("Connected");
 
     tokio::spawn(async move {
+        info!("Waiting for samples");
         rx.for_each(|message| async {
             let data = message.unwrap().into_data();
 
@@ -75,6 +91,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
     });
 
+    info!("Ensuring debugger is running");
+
     tx.send(Message::Text(
         json!({"id": 0, "method": "Runtime.runIfWaitingForDebugger"}).to_string(),
     ))
@@ -82,6 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sleep_delay = time::Duration::from_millis(args.frequency);
 
+    info!("Sleeping for {}ms", args.initial_delay);
     thread::sleep(time::Duration::from_millis(args.initial_delay));
 
     tx.send(Message::Text(
@@ -90,6 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     loop {
+        debug!("Sending command to get sample");
         tx.send(Message::Text(
             json!({"id": 1, "method": "HeapProfiler.getSamplingProfile"}).to_string(),
         ))
